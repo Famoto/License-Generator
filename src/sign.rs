@@ -1,3 +1,5 @@
+mod shared;
+
 use clap::Parser;
 use libsodium_sys::*;
 use std::fs;
@@ -30,7 +32,7 @@ fn main() {
 
     // Read the private key
     let private_key_pem = fs::read_to_string(&args.private_key).expect("Failed to read private key file");
-    let private_key = parse_pem(&private_key_pem).expect("Failed to parse private key");
+    let private_key = shared::parse_pem(&private_key_pem).expect("Failed to parse private key");
 
     // Read the binary file
     let mut binary_file = fs::File::open(&args.binary).expect("Failed to open binary file");
@@ -39,48 +41,18 @@ fn main() {
         .read_to_end(&mut binary_data)
         .expect("Failed to read binary file");
 
-    // Hash the binary data with crypto_generichash_blake2b
-    let mut binary_hash = vec![0u8; crypto_generichash_BYTES as usize];
-    unsafe {
-        crypto_generichash_blake2b(
-            binary_hash.as_mut_ptr(),
-            binary_hash.len(),
-            binary_data.as_ptr(),
-            binary_data.len() as u64,
-            std::ptr::null(),
-            0,
-        );
-    }
+    // Hash the binary data
+    let binary_hash = shared::hash_data(&binary_data);
 
     // Hash the hardware identifier
-    let mut hid_hash = vec![0u8; crypto_generichash_BYTES as usize];
-    unsafe {
-        crypto_generichash_blake2b(
-            hid_hash.as_mut_ptr(),
-            hid_hash.len(),
-            args.hid.as_ptr(),
-            args.hid.len() as u64,
-            std::ptr::null(),
-            0,
-        );
-    }
+    let hid_hash = shared::hash_data(args.hid.as_bytes());
 
     // Concatenate HID hash and binary hash, then hash the result
     let mut concatenated_hash_input = Vec::new();
     concatenated_hash_input.extend_from_slice(&hid_hash);
     concatenated_hash_input.extend_from_slice(&binary_hash);
 
-    let mut concatenated_hash = vec![0u8; crypto_generichash_BYTES as usize];
-    unsafe {
-        crypto_generichash_blake2b(
-            concatenated_hash.as_mut_ptr(),
-            concatenated_hash.len(),
-            concatenated_hash_input.as_ptr(),
-            concatenated_hash_input.len() as u64,
-            std::ptr::null(),
-            0,
-        );
-    }
+    let concatenated_hash = shared::hash_data(&concatenated_hash_input);
 
     // Sign the concatenated hash with the private key
     let mut signature = vec![0u8; crypto_sign_BYTES as usize];
@@ -100,17 +72,4 @@ fn main() {
 
     // Write the binary signature to sign/sign.bin
     fs::write("Output/sign/sign.bin", &signature).expect("Failed to write signature to file");
-}
-
-fn parse_pem(pem: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-    // Split the PEM file into lines and filter out the header and footer
-    let lines: Vec<&str> = pem
-        .lines()
-        .filter(|line| !line.starts_with("-----BEGIN") && !line.starts_with("-----END"))
-        .collect();
-
-    // Join the remaining lines and decode from base64
-    let base64_encoded: String = lines.join("");
-    let decoded = STANDARD.decode(base64_encoded.as_bytes())?;
-    Ok(decoded)
 }
