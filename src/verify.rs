@@ -8,7 +8,7 @@ use base64::Engine;
 use std::process::exit;
 
 #[derive(Parser, Debug)]
-#[command(author = "Famoto", version = "1.0", about = "Verifies a binary hash with a given public key")]
+#[command(author = "Famoto", version = "1.1", about = "Verifies a binary hash with a given public key and hardware identifier")]
 struct Arguments {
     /// Path to the public key
     public_key: PathBuf,
@@ -18,6 +18,9 @@ struct Arguments {
 
     /// Path to the signature file
     signature: PathBuf,
+
+    /// Hardware identifier
+    hid: String,
 }
 
 fn main() {
@@ -41,11 +44,11 @@ fn main() {
         .expect("Failed to read binary file");
 
     // Hash the binary data with crypto_generichash_blake2b
-    let mut hash = vec![0u8; crypto_generichash_BYTES as usize];
+    let mut binary_hash = vec![0u8; crypto_generichash_BYTES as usize];
     unsafe {
         crypto_generichash_blake2b(
-            hash.as_mut_ptr(),
-            hash.len(),
+            binary_hash.as_mut_ptr(),
+            binary_hash.len(),
             binary_data.as_ptr(),
             binary_data.len() as u64,
             std::ptr::null(),
@@ -53,9 +56,39 @@ fn main() {
         );
     }
 
-    // Encode the hash as Base64 and write to verify/hash.out
-    let hash_base64 = STANDARD.encode(&hash);
-    fs::write("Output/verify/hash.out", &hash_base64).expect("Failed to write hash to file");
+    // Hash the hardware identifier
+    let mut hid_hash = vec![0u8; crypto_generichash_BYTES as usize];
+    unsafe {
+        crypto_generichash_blake2b(
+            hid_hash.as_mut_ptr(),
+            hid_hash.len(),
+            args.hid.as_ptr(),
+            args.hid.len() as u64,
+            std::ptr::null(),
+            0,
+        );
+    }
+
+    // Concatenate HID hash and binary hash, then hash the result
+    let mut concatenated_hash_input = Vec::new();
+    concatenated_hash_input.extend_from_slice(&hid_hash);
+    concatenated_hash_input.extend_from_slice(&binary_hash);
+
+    let mut concatenated_hash = vec![0u8; crypto_generichash_BYTES as usize];
+    unsafe {
+        crypto_generichash_blake2b(
+            concatenated_hash.as_mut_ptr(),
+            concatenated_hash.len(),
+            concatenated_hash_input.as_ptr(),
+            concatenated_hash_input.len() as u64,
+            std::ptr::null(),
+            0,
+        );
+    }
+
+    // Encode the concatenated hash as Base64 and write to verify/hash.out
+    let concatenated_hash_base64 = STANDARD.encode(&concatenated_hash);
+    fs::write("Output/verify/hash.out", &concatenated_hash_base64).expect("Failed to write hash to file");
 
     // Read the binary signature file
     let signature = fs::read(&args.signature).expect("Failed to read signature file");
@@ -64,8 +97,8 @@ fn main() {
     let is_valid = unsafe {
         crypto_sign_verify_detached(
             signature.as_ptr(),
-            hash.as_ptr(),
-            hash.len() as u64,
+            concatenated_hash.as_ptr(),
+            concatenated_hash.len() as u64,
             public_key.as_ptr(),
         ) == 0
     };
