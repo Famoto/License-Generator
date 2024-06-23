@@ -35,22 +35,14 @@ The process of signing and verifying a binary file in this project involves seve
 
 ```mermaid
 graph TD
-    A[Start Signing] --> B[Read Private Key]
-    B --> C[Read Binary File]
-    C --> D[Read HID File]
-    D --> E[Hash Binary File with BLAKE2]
+    A[Start Signing] --> E[Hash Binary File with BLAKE2]
     E --> F[Hash HID with BLAKE2]
     F --> G[Concatenate Binary Hash and HID Hash]
     G --> H[Hash Concatenated Hash with BLAKE2]
     H --> I[Sign Final Hash with Private Key]
-    I --> J[Save Base64 Encoded Hash and Signature to Files]
-    J --> K[End Signing]
+    I --> K[End Signing]
 
-    L[Start Verifying] --> M[Read Public Key]
-    M --> N[Read Binary File]
-    N --> O[Read Signature File]
-    O --> P[Read HID File]
-    P --> Q[Hash Binary File with BLAKE2]
+    L[Start Verifying] --> Q[Hash Binary File with BLAKE2]
     Q --> R[Hash HID with BLAKE2]
     R --> S[Concatenate Binary Hash and HID Hash]
     S --> T[Hash Concatenated Hash with BLAKE2]
@@ -60,24 +52,16 @@ graph TD
     V -->|No| X[Verification Failed]
 
     subgraph Signing Process
-        A --> B
-        B --> C
-        C --> D
-        D --> E
+        A --> E
         E --> F
         F --> G
         G --> H
         H --> I
-        I --> J
-        J --> K
+        I --> K
     end
 
     subgraph Verifying Process
-        L --> M
-        M --> N
-        N --> O
-        O --> P
-        P --> Q
+        L --> Q
         Q --> R
         R --> S
         S --> T
@@ -86,7 +70,6 @@ graph TD
         V --> W
         V --> X
     end
-
 ```
 
 ## Usage
