@@ -1,3 +1,7 @@
+# Disclaimer
+
+This Code is **PROOF OF CONCEPT** don't use it in Productive Systems
+
 # Binary Signer & Verifier
 
 ## Overview
