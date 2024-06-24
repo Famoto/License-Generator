@@ -11,9 +11,17 @@ This project provides a toolset for hashing a binary file with the BLAKE2 hashin
 - **Hardware Binding**: Incorporates a hardware identifier (HID) into the hash to bind the software to specific hardware.
 - **Verification**: Verifies the signed hash using the corresponding public key.
 
+## Requirements
+
+- Private Key File: A PEM-encoded private key file for signing the binary hash.
+- Public Key File: A PEM-encoded public key file for verifying the binary hash.
+- Binary File: The binary file you want to hash and sign.
+- HID: A Hardware Specific String
+
 ## Process Description
 
 The process of signing and verifying a binary file in this project involves several steps to ensure the integrity and authenticity of the software, as well as its binding to specific hardware. Below is a short description of the process followed by a Mermaid diagram illustrating the hashing and signing workflow.
+
 ### Hashing and Signing Process
 
 - Input Reading: The process starts by reading the private key, binary file, and hardware identifier (HID) file.
