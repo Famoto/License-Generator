@@ -6,8 +6,7 @@ use std::fs;
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::exit;
-use base64::engine::general_purpose::STANDARD;
-use base64::Engine;
+use crate::shared::encode_base64;
 
 #[derive(Parser, Debug)]
 #[command(author = "Famoto", version = "1.1", about = "Verifies a binary hash with a given public key and hardware identifier")]
@@ -59,7 +58,7 @@ fn main() {
     let concatenated_hash = shared::hash_data(&concatenated_hash_input);
 
     // Encode the concatenated hash as Base64 and write to verify/hash.out
-    let concatenated_hash_base64 = STANDARD.encode(&concatenated_hash);
+    let concatenated_hash_base64 = encode_base64(&concatenated_hash);
     fs::write("Output/verify/hash.out", &concatenated_hash_base64).expect("Failed to write hash to file");
 
     // Read the binary signature file

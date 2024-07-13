@@ -5,8 +5,7 @@ use libsodium_sys::*;
 use std::fs;
 use std::io::Read;
 use std::path::PathBuf;
-use base64::engine::general_purpose::STANDARD;
-use base64::Engine;
+use crate::shared::encode_base64;
 
 #[derive(Parser, Debug)]
 #[command(author = "Famoto", version = "1.1", about = "Hashes a binary with BLAKE2, includes a hardware identifier, and signs it with a given private key")]
@@ -67,7 +66,7 @@ fn main() {
     }
 
     // Encode the concatenated hash as Base64 and write to hash.out
-    let concatenated_hash_base64 = STANDARD.encode(&concatenated_hash);
+    let concatenated_hash_base64 = encode_base64(&concatenated_hash);
     fs::write("Output/sign/hash.out", &concatenated_hash_base64).expect("Failed to write hash to file");
 
     // Write the binary signature to sign/sign.bin
