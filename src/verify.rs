@@ -28,7 +28,9 @@ struct Arguments {
 fn main() {
     // Initialize libsodium
     unsafe {
-        sodium_init();
+        if (sodium_init() < 0) {
+            panic!("Libsodium Not Initialized Correctly")
+        }
     }
 
     // Parse CLI arguments

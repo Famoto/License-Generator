@@ -1,4 +1,5 @@
 mod shared;
+use std::panic;
 
 use clap::Parser;
 use libsodium_sys::*;
@@ -24,8 +25,10 @@ struct Arguments {
 fn main() {
     // Initialize libsodium
     unsafe {
-        sodium_init();
-    }
+            if (sodium_init() < 0) {
+                panic!("Libsodium Not Initialized Correctly")
+            }
+        }
 
     // Parse CLI arguments
     let args = Arguments::parse();
